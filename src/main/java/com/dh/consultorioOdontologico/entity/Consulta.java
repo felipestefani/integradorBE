@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Consulta {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,4 +27,6 @@ public class Consulta {
 
     @Column(nullable = false)
     private Timestamp dataConsulta;
+
+    private  String chave;
 }

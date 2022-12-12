@@ -1,6 +1,5 @@
 package com.dh.consultorioOdontologico.controller;
 
-import com.dh.consultorioOdontologico.entity.Paciente;
 import com.dh.consultorioOdontologico.entity.dto.PacienteDTO;
 import com.dh.consultorioOdontologico.service.PacienteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +26,8 @@ public class PacienteController {
     }
 
     @PostMapping
-    public ResponseEntity salvar(@RequestBody Paciente paciente){
-        return pacienteService.salvar(paciente);
+    public ResponseEntity salvar(@RequestBody PacienteDTO pacienteDTO){
+        return pacienteService.salvar(pacienteDTO);
     }
 
     @DeleteMapping()

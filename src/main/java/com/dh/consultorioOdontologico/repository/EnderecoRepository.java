@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface EnderecoRepository extends JpaRepository<Endereco, Long> {
     Optional<Endereco> findById(Long id);
+
+    Optional<Endereco> findByRuaAndNumeroAndSiglaEstado(String rua, int numero, String sigla_estado);
 }

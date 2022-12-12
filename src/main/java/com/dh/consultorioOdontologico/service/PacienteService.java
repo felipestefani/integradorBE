@@ -11,8 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -36,19 +34,26 @@ public class PacienteService {
         List<PacienteDTO> pacienteDTOList = new ArrayList<>();
         ObjectMapper mapper = new ObjectMapper();
         for(Paciente paciente: pacienteList){
-            pacienteDTOList.add(mapper.convertValue(paciente, PacienteDTO.class));
+            EnderecoDTO enderecoDTO = mapper.convertValue(paciente.getEndereco(), EnderecoDTO.class);
+            PacienteDTO pacienteDTO = mapper.convertValue(paciente, PacienteDTO.class);
+            pacienteDTO.setEnderecoDTO(enderecoDTO);
+            pacienteDTOList.add(pacienteDTO);
         }
         logger.info("Exibindo os pacientes.");
         return pacienteDTOList;
     }
 
-    public ResponseEntity salvar(Paciente paciente){
+    public ResponseEntity salvar(PacienteDTO pacienteDTO){
         try{
             logger.info("Iniciando operação para salvar o paciente.");
+            ObjectMapper mapper = new ObjectMapper();
+            Paciente paciente = mapper.convertValue(pacienteDTO, Paciente.class);
+            //enderecoService.salvarEndereco(pacienteDTO.getEnderecoDTO());
             paciente.setDataRegistro(Timestamp.from(Instant.now()));
+            paciente.setEndereco(mapper.convertValue(pacienteDTO.getEnderecoDTO(), Endereco.class));
             Paciente pacienteSalvo = pacienteRepository.save(paciente);
-            Endereco endereco = pacienteSalvo.getEndereco();
-            enderecoService.salvarEndereco(endereco);
+//            Endereco endereco = pacienteSalvo.getEndereco();
+//            enderecoService.salvarEndereco(endereco);
             logger.info("Paciente " + pacienteSalvo.getNome() + " salvo com sucesso.");
             return new ResponseEntity("Paciente " + pacienteSalvo.getNome() + " criado com sucesso!", HttpStatus.CREATED);
         } catch (Exception e) {
@@ -85,8 +90,27 @@ public class PacienteService {
 
     public ResponseEntity alterarParcialmente(PacienteDTO pacienteDTO){
         ObjectMapper mapper = new ObjectMapper();
+        EnderecoDTO enderecoDTO = new EnderecoDTO();
         logger.info("Iniciando operação para alterar parcialmente o paciente.");
         Optional<Paciente> pacienteOp = Optional.ofNullable(pacienteRepository.findByRg(pacienteDTO.getRg()));
+        Optional<Endereco> enderecoOp = Optional.ofNullable(mapper.convertValue(pacienteDTO.getEnderecoDTO(), Endereco.class));
+        if(enderecoOp.isEmpty()){
+            Endereco endereco = pacienteOp.get().getEndereco();
+            enderecoDTO = mapper.convertValue(endereco, EnderecoDTO.class);
+        } else {
+            if(enderecoOp.get().getRua() != null)
+                pacienteOp.get().getEndereco().setRua(enderecoOp.get().getRua());
+
+            if(enderecoOp.get().getNumero() != 0)
+                pacienteOp.get().getEndereco().setNumero(enderecoOp.get().getNumero());
+
+            if(enderecoOp.get().getCidade() != null)
+                pacienteOp.get().getEndereco().setCidade(enderecoOp.get().getCidade());
+
+            if(enderecoOp.get().getSiglaEstado() != null)
+                pacienteOp.get().getEndereco().setSiglaEstado(enderecoOp.get().getSiglaEstado());
+            enderecoDTO = mapper.convertValue(pacienteOp.get().getEndereco(), EnderecoDTO.class);
+        }
         if(pacienteOp.isEmpty())
             return new ResponseEntity("Não existe o paciente com o rg " + pacienteDTO.getRg(), HttpStatus.NOT_FOUND);
         Paciente paciente = pacienteOp.get();
@@ -94,29 +118,14 @@ public class PacienteService {
             paciente.setNome(pacienteDTO.getNome());
          else
             paciente.getNome();
-
         if(pacienteDTO.getSobrenome() != null)
             paciente.setSobrenome(pacienteDTO.getSobrenome());
         else
             paciente.getSobrenome();
-        if(pacienteDTO.getEnderecoDTO().getRua() != null)
-            paciente.getEndereco().setRua(pacienteDTO.getEnderecoDTO().getRua());
-        else
-            paciente.getEndereco().getRua();
-        if(pacienteDTO.getEnderecoDTO().getNumero() != 0)
-            paciente.getEndereco().setNumero(pacienteDTO.getEnderecoDTO().getNumero());
-        else
-            paciente.getEndereco().getNumero();
-        if(pacienteDTO.getEnderecoDTO().getCidade() != null)
-            paciente.getEndereco().setCidade(pacienteDTO.getEnderecoDTO().getCidade());
-        else
-            paciente.getEndereco().getCidade();
-        if(pacienteDTO.getEnderecoDTO().getEstado() != null)
-            paciente.getEndereco().setEstado(pacienteDTO.getEnderecoDTO().getEstado());
-        else
-            paciente.getEndereco().getEstado();
-
-        PacienteDTO pacienteAlt = mapper.convertValue(pacienteRepository.save(paciente), PacienteDTO.class);
+        pacienteRepository.save(paciente);
+        //enderecoDTO = mapper.convertValue(paciente.getEndereco(), EnderecoDTO.class);
+        PacienteDTO pacienteAlt = mapper.convertValue(paciente, PacienteDTO.class);
+        pacienteAlt.setEnderecoDTO(enderecoDTO);
         logger.info("Paciente alterado com sucesso!");
         return new ResponseEntity(pacienteAlt, HttpStatus.CREATED);
     }
@@ -138,10 +147,12 @@ public class PacienteService {
             paciente.getEndereco().setNumero(pacienteDTO.getEnderecoDTO().getNumero());
         if(pacienteDTO.getEnderecoDTO().getCidade() != null)
             paciente.getEndereco().setCidade(pacienteDTO.getEnderecoDTO().getCidade());
-        if(pacienteDTO.getEnderecoDTO().getEstado() != null)
-            paciente.getEndereco().setEstado(pacienteDTO.getEnderecoDTO().getEstado());
-
-        PacienteDTO pacienteAlt = mapper.convertValue(pacienteRepository.save(paciente), PacienteDTO.class);
+        if(pacienteDTO.getEnderecoDTO().getSiglaEstado() != null)
+            paciente.getEndereco().setSiglaEstado(pacienteDTO.getEnderecoDTO().getSiglaEstado());
+        pacienteRepository.save(paciente);
+        EnderecoDTO enderecoDTO = mapper.convertValue(paciente.getEndereco(), EnderecoDTO.class);
+        PacienteDTO pacienteAlt = mapper.convertValue(paciente, PacienteDTO.class);
+        pacienteAlt.setEnderecoDTO(enderecoDTO);
         logger.info("Paciente alterado com sucesso!");
         return new ResponseEntity(pacienteAlt, HttpStatus.CREATED);
     }

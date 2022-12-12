@@ -26,6 +26,10 @@ public class ConsultaController {
     }
 
     @DeleteMapping
-    public ResponseEntity deletar(@RequestBody @Valid ConsultaDTO consultaDTO) { return consultaService.deletar(consultaDTO); }
+    public ResponseEntity deletarConsulta(@RequestBody @Valid ConsultaDTO consultaDTO) { return consultaService.deletarConsulta(consultaDTO); }
+
+    @PatchMapping
+    public ResponseEntity alterarConsultaParcial(@RequestBody @Valid ConsultaDTO consultaDTO) { return consultaService.alterarConsultaParcial(consultaDTO);
+    }
 
 }

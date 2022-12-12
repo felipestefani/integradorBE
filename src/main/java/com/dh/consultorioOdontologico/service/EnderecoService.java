@@ -22,11 +22,13 @@ public class EnderecoService {
     EnderecoRepository repository;
 
     static final Logger logger = Logger.getLogger(EnderecoService.class);
-    public ResponseEntity salvarEndereco(Endereco endereco) {
+    public ResponseEntity salvarEndereco(EnderecoDTO enderecoDTO) {
         logger.info("Cadastrando novo endereço.");
         try {
+            ObjectMapper mapper = new ObjectMapper();
+            Endereco endereco = mapper.convertValue(enderecoDTO, Endereco.class);
             Endereco enderecoSalvo = repository.save(endereco);
-            logger.info("Endereço cadastrado com sucesso.");
+            logger.info("Endereço cadastrado com sucesso. Endereço de id: " + enderecoSalvo.getId());
             return new ResponseEntity("Endereco com id " + enderecoSalvo.getId() + " foi cadastrado com sucesso.", HttpStatus.CREATED);
         }catch (Exception e) {
             logger.error("O endereço não foi cadastrado.");
@@ -47,25 +49,25 @@ public class EnderecoService {
         return enderecoDTOList;
     }
 
-    public ResponseEntity buscarEnderecoPorId(Long id){
-        Optional<Endereco> endereco = repository.findById((id));
+    public ResponseEntity buscarEndereco(EnderecoDTO enderecoDTO){
+        Optional<Endereco> endereco = repository.findByRuaAndNumeroAndSiglaEstado(enderecoDTO.getRua(), enderecoDTO.getNumero(), enderecoDTO.getSiglaEstado());
         logger.info("Buscando endereço.");
         if (endereco.isEmpty()) {
         logger.error("O endereço informado não existe.");
             return new ResponseEntity("O endereço informado não existe.", HttpStatus.BAD_REQUEST);
         }
-        repository.findById(id);
         logger.info("Endereço encontrado com sucesso.");
         return new ResponseEntity("Endereço encontrado com sucesso", HttpStatus.OK);
     }
 
     public ResponseEntity alterarTotal(EnderecoDTO enderecoDTO) {
         ObjectMapper mapper = new ObjectMapper();
+        Endereco endereco = mapper.convertValue(enderecoDTO, Endereco.class);
         logger.info("Atualizando totalmente um endereço.");
-        Optional<Endereco> enderecoOptional = repository.findById(enderecoDTO.getId());
+        Optional<Endereco> enderecoOptional = repository.findByRuaAndNumeroAndSiglaEstado(endereco.getRua(), endereco.getNumero(), endereco.getSiglaEstado());
         if (enderecoOptional.isEmpty()) {
             logger.error("O endereço informado não existe.");
-            return new ResponseEntity("O endereço com o id " + enderecoDTO.getId() + " não existe", HttpStatus.NOT_FOUND);
+            return new ResponseEntity("O endereço com buscado não existe", HttpStatus.NOT_FOUND);
         }
         Endereco atualizandoDados = enderecoOptional.get();
         if(enderecoDTO.getRua() != null)
@@ -74,18 +76,19 @@ public class EnderecoService {
             atualizandoDados.setNumero(enderecoDTO.getNumero());
         if (enderecoDTO.getCidade() != null)
             atualizandoDados.setCidade(enderecoDTO.getCidade());
-        if (enderecoDTO.getEstado() != null)
-            atualizandoDados.setEstado(enderecoDTO.getEstado());
+        if (enderecoDTO.getSiglaEstado() != null)
+            atualizandoDados.setSiglaEstado(enderecoDTO.getSiglaEstado());
 
-        EnderecoDTO enderecoAlterado = mapper.convertValue(repository.save(atualizandoDados), EnderecoDTO.class);
+        repository.save(atualizandoDados);
+        EnderecoDTO enderecoAlterado = mapper.convertValue(atualizandoDados, EnderecoDTO.class);
         logger.info("Endereço atualizado com sucesso.");
-        return new ResponseEntity(enderecoAlterado, HttpStatus.CREATED);
+        return new ResponseEntity(enderecoAlterado, HttpStatus.OK);
     }
 
     public ResponseEntity alterarParcial(EnderecoDTO enderecoDTO) {
         ObjectMapper mapper = new ObjectMapper();
         logger.info("Atualizando parcialmente um endereço.");
-        Optional<Endereco> enderecoOptional = repository.findById(enderecoDTO.getId());
+        Optional<Endereco> enderecoOptional = repository.findByRuaAndNumeroAndSiglaEstado(enderecoDTO.getRua(), enderecoDTO.getNumero(),enderecoDTO.getSiglaEstado());
         if (enderecoOptional.isEmpty()) {
             logger.error("O endereço informado não existe.");
             return new ResponseEntity("O endereço informado não existe",HttpStatus.NOT_FOUND);
@@ -97,12 +100,12 @@ public class EnderecoService {
             atualizandoDados.setNumero(enderecoDTO.getNumero());
         if (enderecoDTO.getCidade() != null)
             atualizandoDados.setCidade(enderecoDTO.getCidade());
-        if (enderecoDTO.getEstado() != null)
-            atualizandoDados.setEstado(enderecoDTO.getEstado());
+        if (enderecoDTO.getSiglaEstado() != null)
+            atualizandoDados.setSiglaEstado(enderecoDTO.getSiglaEstado());
 
-        Endereco enderecoAlterado = mapper.convertValue(repository.save(atualizandoDados), Endereco.class);
+        EnderecoDTO enderecoAlterado = mapper.convertValue(atualizandoDados, EnderecoDTO.class);
         logger.info("O endereço foi atualizado com sucesso.");
-        return new ResponseEntity(enderecoAlterado, HttpStatus.CREATED);
+        return new ResponseEntity(enderecoAlterado, HttpStatus.OK);
     }
 
     public ResponseEntity deletarEndereco(Long id) {
